@@ -16,13 +16,19 @@ cd /cluster/mshen/
 # Redefine cd to also append currdir to log file
 function cd() { builtin cd "$@" && echo $(pwd) >> /cluster/mshen/self-library/misc/log.txt; }
 
-printf "\n%s\n" "${yel}==== Recent Directories ====${end}"
-tail -n 5 /cluster/mshen/self-library/misc/log.txt
+# Only write to stdout in a login shell, otherwise scp/sftp breaks
+if shopt -q login_shell; then
+  printf "\n%s\n" "${yel}==== Recent Directories ====${end}"
+  tail -n 5 /cluster/mshen/self-library/misc/log.txt
 
-printf "\n%s\n" "${red}==== What are you curious about? ====${end}"
-ls
-printf "\n"
+  printf "\n%s\n" "${red}==== What are you curious about? ====${end}"
+  ls
+  printf "\n"
+fi
 
-
+# Trim recent directories
 tail /cluster/mshen/self-library/misc/log.txt > /cluster/mshen/self-library/misc/log2.txt
 mv /cluster/mshen/self-library/misc/log2.txt /cluster/mshen/self-library/misc/log.txt
+
+# Append personal package to PYTHONPATH
+export PYTHONPATH="${PYTHONPATH}:/cluster/mshen/self-library"
