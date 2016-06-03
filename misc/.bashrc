@@ -18,8 +18,11 @@ function cd() { builtin cd "$@" && echo $(pwd) >> /cluster/mshen/self-library/mi
 
 printf "\n%s\n" "${yel}==== Recent Directories ====${end}"
 tail -n 5 /cluster/mshen/self-library/misc/log.txt
-tail -n 10 /cluster/mshen/self-library/misc/log.txt > /cluster/mshen/self-library/misc/log.txt
 
 printf "\n%s\n" "${red}==== What are you curious about? ====${end}"
 ls
 printf "\n"
+
+
+tail /cluster/mshen/self-library/misc/log.txt > /cluster/mshen/self-library/misc/log2.txt
+mv /cluster/mshen/self-library/misc/log2.txt /cluster/mshen/self-library/misc/log.txt
