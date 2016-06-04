@@ -1,6 +1,7 @@
 # Utility library functions: IO, OS stuff
 
 import sys, string, csv, os, fnmatch
+from subprocess import call
 
 
 def read_delimited_text(inp_fn, dlm, verbose = False):
@@ -34,14 +35,13 @@ def get_fn(string):
   return string.split('/')[-1].split('.')[0]
 
 
-def get_prev_step(f):
+def get_prev_step(f, src_dir):
   # Assumes a folder of python functions
   #   utility files like _runall, _clean start with _
   #   processing steps begin with a_, b_, ...
   # Given a step file, returns the previous step filename
 
-  d = get_script_dir(f)
-  steps = [x.replace('.py', '') for x in os.listdir(d) if fnmatch.fnmatch(x, '?*_*.py')]
+  steps = [x.replace('.py', '') for x in os.listdir(src_dir) if fnmatch.fnmatch(x, '?*_*.py')]
   sorted(steps)
   name = get_fn(f)
   ind = steps.index(name)
@@ -51,7 +51,28 @@ def get_prev_step(f):
     print 'Error: No previous step for first script', f
   return ''
 
-def get_script_dir(f):
-  # Returns the directory of the current script
-  # Expects __file__ to be passed as f
-  return os.path.dirname(os.path.abspath(f))
+def cp_config_to_results(src_dir, results_place):
+  call(['cp', src_dir + '_config.py', results_place])
+  return
+
+def code_dependency(src_dir):
+  # Returns the input/output dependency of a collection of 
+  # python scripts
+  #
+  # Looks for the variable DEFAULT_INP_DIR 
+
+  dep = dict()
+
+  for fn in os.listdir(src_dir):
+    if fnmatch.fnmatch(fn, '*.py'):
+      with open(src_dir + fn) as f:
+        for i, line in enumerate(f):
+          words = line.split()
+          if len(words) > 0 and words[0] == 'DEFAULT_INP_DIR':
+            inp = ' '.join(words[2:])
+            dep[fn] = inp
+  with open(src_dir + '_dependencies.txt', 'w') as f:
+    f.write('Script Name: Expected input folder\n\n')
+    for k in sorted(dep.keys()):
+      f.write(k + ': ' + dep[k] + '\n')
+  return
