@@ -1,9 +1,59 @@
 # Utility library functions: IO, OS stuff
 
-import sys, string, csv, os, fnmatch
+import sys, string, csv, os, fnmatch, datetime
 from subprocess import call
 
+#########################################
+# TIME
+#########################################
 
+class Timer:
+  def __init__(self, total = -1, print_interval = 5):
+    # print_interval is in units of seconds
+    self.times = [datetime.datetime.now()]
+    self.num = 0
+    self.print_interval = print_interval
+    self.last_print = 0
+    self.prev_num = 0
+    self.total = int(total)
+
+  def progress_update(self):
+    if self.last_print == 0:
+      num_secs = (datetime.datetime.now() - self.times[0]).seconds
+    else:
+      num_secs = (datetime.datetime.now() - self.last_print).seconds
+
+    if num_secs >= self.print_interval:
+      self.last_print = datetime.datetime.now()
+      print '\n\tTIMER:', self.num, 'iterations at', datetime.datetime.now()
+      print '\tTIMER:', self.num - self.prev_num, 'iterations performed in', num_secs, 'seconds'
+      print '\t\tRate:', float(self.num - self.prev_num) / num_secs, 'iterations/second'
+      
+      a = (self.times[1] - self.times[0]) / self.num
+      print '\t\t Avg. Iteration Time:', a
+      if self.total != -1:
+        print '\tTIMER: Total Expected Time for', self.total, \
+          'iterations =', a * self.total
+
+      self.prev_num = self.num
+    return
+
+  def update(self, print_progress = False):
+    if len(self.times) < 2:
+      self.times.append(datetime.datetime.now())
+    else:
+      self.times[-1] = datetime.datetime.now()
+    self.num += 1
+
+    if print_progress:
+      self.progress_update()
+    return
+
+
+
+#########################################
+# I/O
+#########################################
 def read_delimited_text(inp_fn, dlm, verbose = False):
   # Reads in a text file with the given delimiter, like '\t'
   if verbose:
@@ -21,7 +71,9 @@ def write_delimited_text(out_fn, lists, dlm):
       writ.writerow(line)
   return
 
-
+#########################################
+# OS
+#########################################
 def ensure_dir_exists(directory):
   # Guarantees that input dir exists
   if not os.path.exists(directory):
@@ -34,6 +86,10 @@ def get_fn(string):
   # Out: Filename without extensions or directories
   return string.split('/')[-1].split('.')[0]
 
+
+#########################################
+# PROJECT STRUCTURE
+#########################################
 
 def get_prev_step(f, src_dir):
   # Assumes a folder of python functions
