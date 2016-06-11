@@ -1,7 +1,6 @@
 # Utility library functions: IO, OS stuff
 
-import sys, string, csv, os, fnmatch, datetime
-from subprocess import call
+import sys, string, csv, os, fnmatch, datetime, subprocess
 
 #########################################
 # TIME
@@ -25,17 +24,19 @@ class Timer:
 
     if num_secs >= self.print_interval:
       self.last_print = datetime.datetime.now()
-      print '\n\tTIMER:', self.num, 'iterations at', datetime.datetime.now()
-      print '\tTIMER:', self.num - self.prev_num, 'iterations performed in', num_secs, 'seconds'
-      print '\t\tRate:', float(self.num - self.prev_num) / num_secs, 'iterations/second'
+      print '\n\t\tTIMER:', self.num, 'iterations at', datetime.datetime.now()
+      print '\t\tTIMER:', self.num - self.prev_num, 'iterations performed in', num_secs, 'seconds'
+      print '\t\t\tRate:', float(self.num - self.prev_num) / num_secs, 'iterations/second'
       
       a = (self.times[1] - self.times[0]) / self.num
-      print '\t\t Avg. Iteration Time:', a
+      print '\t\t\tAvg. Iteration Time:', a
       if self.total != -1:
-        print '\tTIMER: Total Expected Time for', self.total, \
+        print '\t\tTIMER: Total Expected Time for', self.total, \
           'iterations =', a * self.total
 
       self.prev_num = self.num
+
+    sys.stdout.flush()
     return
 
   def update(self, print_progress = False):
@@ -80,12 +81,32 @@ def ensure_dir_exists(directory):
     os.makedirs(directory)
   return
 
+def exists_empty_fn(fn):
+  f = open(fn, 'w')
+  f.close()
+  return
 
 def get_fn(string):
   # In: Filename (possibly with directories)
   # Out: Filename without extensions or directories
   return string.split('/')[-1].split('.')[0]
 
+def line_count(fn):
+  print fn
+  try:
+    ans = subprocess.check_output(['wc', '-l', fn.strip()])
+    ans = int(ans.split()[0])
+  except OSError as err:
+    print('OS ERROR:', err)
+  return ans
+
+def ld_library_path(lib_path):
+  # Libraries for locally installed packages usually 
+  # need to be added to LD_LIBRARY_PATH for them to work
+  ldlp = subprocess.check_output('echo $LD_LIBRARY_PATH', shell = True)
+  if lib_path not in ldlp:
+    subprocess.call('export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:' + lib_path, shell = True)
+  return
 
 #########################################
 # PROJECT STRUCTURE
@@ -107,8 +128,8 @@ def get_prev_step(f, src_dir):
     print 'Error: No previous step for first script', f
   return ''
 
-def cp_config_to_results(src_dir, results_place):
-  call(['cp', src_dir + '_config.py', results_place])
+def cp(fn, out_dir):
+  subprocess.call(['cp', fn, out_dir])
   return
 
 def code_dependency(src_dir):

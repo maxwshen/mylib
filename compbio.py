@@ -1,5 +1,8 @@
 import Bio
 
+FASTQ_OFFSET = 33
+
+
 #########################################
 # Alignments
 #########################################
@@ -35,3 +38,9 @@ def read_narrowpeak_file(fn):
       peaks.append(NarrowPeak(line))
   print 'Found', len(peaks), 'peaks'
   return peaks
+
+
+def SeqIO_fastq_qual_string(rx):
+  # Takes as input a Bio.SeqIO object
+  quals = rx.letter_annotations['phred_quality']
+  return ''.join([chr(s + 33) for s in quals])
