@@ -50,7 +50,15 @@ class Timer:
       self.progress_update()
     return
 
-
+def time_dec(func):
+  def wrapper(*args, **kwargs):
+    t = datetime.datetime.now()
+    print '\n', t
+    res = func(*args, **kwargs)
+    print datetime.datetime.now()
+    print 'Completed in', datetime.datetime.now() - t, '\n'
+    return res
+  return wrapper
 
 #########################################
 # I/O
