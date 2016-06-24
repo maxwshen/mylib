@@ -72,6 +72,14 @@ def read_delimited_text(inp_fn, dlm, verbose = False):
     d = list(reader)
   return d
 
+def dictread_delimited_text(inp_fn, dlm, verbose = False):
+  if verbose:
+    print 'Reading in', inp_fn, '...'
+  with open(inp_fn) as f:
+    reader = csv.DictReader(f, delimiter = dlm)
+    d = list(reader)
+  return d
+
 def write_delimited_text(out_fn, lists, dlm):
   # Assumes input as a 2D list, with lines / words
   with open(out_fn, 'w') as f:
@@ -85,11 +93,15 @@ def write_delimited_text(out_fn, lists, dlm):
 #########################################
 def ensure_dir_exists(directory):
   # Guarantees that input dir exists
-  if not os.path.exists(directory):
+  try:
     os.makedirs(directory)
+  except OSError:
+    if not os.path.isdir(directory):
+      raise
   return
 
 def exists_empty_fn(fn):
+  ensure_dir_exists(os.path.dirname(fn))
   f = open(fn, 'w')
   f.close()
   return
