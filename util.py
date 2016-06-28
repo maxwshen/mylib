@@ -39,7 +39,7 @@ class Timer:
     sys.stdout.flush()
     return
 
-  def update(self, print_progress = False):
+  def update(self, print_progress = True):
     if len(self.times) < 2:
       self.times.append(datetime.datetime.now())
     else:
