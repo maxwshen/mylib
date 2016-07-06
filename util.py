@@ -112,7 +112,6 @@ def get_fn(string):
   return string.split('/')[-1].split('.')[0]
 
 def line_count(fn):
-  print fn
   try:
     ans = subprocess.check_output(['wc', '-l', fn.strip()])
     ans = int(ans.split()[0])
@@ -148,7 +147,7 @@ def get_prev_step(f, src_dir):
     print 'Error: No previous step for first script', f
   return ''
 
-def cp(fn, out_dir):
+def shell_cp(fn, out_dir):
   subprocess.call(['cp', fn, out_dir])
   return
 
@@ -159,7 +158,6 @@ def code_dependency(src_dir):
   # Looks for the variable DEFAULT_INP_DIR 
 
   dep = dict()
-
   for fn in os.listdir(src_dir):
     if fnmatch.fnmatch(fn, '*.py'):
       with open(src_dir + fn) as f:
@@ -173,3 +171,19 @@ def code_dependency(src_dir):
     for k in sorted(dep.keys()):
       f.write(k + ': ' + dep[k] + '\n')
   return
+
+
+#########################################
+# ERROR CATCHING / DEBUGGING
+#########################################
+
+# Decorate a function with this
+# to not stop running program if function errors out
+def catch_function_fail_dec(func):
+  def wrapper(*args, **kwargs):
+    try:
+      func(*args, **kwargs)
+    except:
+      print 'Skipping', func.__name__
+    return  
+  return wrapper
