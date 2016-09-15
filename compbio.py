@@ -19,6 +19,15 @@ def hg19_chromosome_size(chro):
 # I/O
 #########################################
 
+def fasta_generator(fasta_fn):
+  head = ''
+  with open(fasta_fn) as f:
+    for i, line in enumerate(f):
+      if line[0] == '>':
+        head = line
+      else:
+        yield [head.strip(), line.strip()]
+
 class NarrowPeak:
   # Reference: 
   # https://genome.ucsc.edu/FAQ/FAQformat.html#format12

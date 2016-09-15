@@ -127,6 +127,14 @@ def ld_library_path(lib_path):
     subprocess.call('export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:' + lib_path, shell = True)
   return
 
+def shell_cp(fn, out_dir):
+  subprocess.call(['cp', fn, out_dir])
+  return
+
+def shell_mv(inp_fn, out_fn):
+  subprocess.call(['mv', inp_fn, out_fn])
+  return
+
 #########################################
 # PROJECT STRUCTURE
 #########################################
@@ -146,10 +154,6 @@ def get_prev_step(f, src_dir):
   else:
     print 'Error: No previous step for first script', f
   return ''
-
-def shell_cp(fn, out_dir):
-  subprocess.call(['cp', fn, out_dir])
-  return
 
 def code_dependency(src_dir):
   # Returns the input/output dependency of a collection of 
@@ -187,3 +191,6 @@ def catch_function_fail_dec(func):
       print 'Skipping', func.__name__
     return  
   return wrapper
+
+def check_variable_exists(var_name):
+  return var_name in vars() or var_name in globals()
