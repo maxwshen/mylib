@@ -1,4 +1,4 @@
-import Bio
+import Bio, sys, os, subprocess
 
 FASTQ_OFFSET = 33
 
@@ -19,6 +19,14 @@ def hg19_chromosome_size(chro):
 # I/O
 #########################################
 
+def get_genomic_seq_twoBitToFa(genome, chro, start, end):
+  TOOL = '/cluster/mshen/tools/2bit/twoBitToFa'
+  TOOL_DB_FOLD = '/cluster/mshen/tools/2bit/'
+  ans = subprocess.check_output(TOOL + ' ' + TOOL_DB_FOLD + genome + '.2bit -noMask stdout -seq=' + chro + ' -start=' + str(start) + ' -end=' + str(end), shell = True)
+  ans = ''.join(ans.split('\n')[1:])
+  return ans.strip()
+
+
 def fasta_generator(fasta_fn):
   head = ''
   with open(fasta_fn) as f:
@@ -27,6 +35,17 @@ def fasta_generator(fasta_fn):
         head = line
       else:
         yield [head.strip(), line.strip()]
+
+def read_fasta(fasta_fn):
+  labels, reads = [], []
+  with open(fasta_fn) as f:
+    for i, line in enumerate(f):
+      if line[0] == '>':
+        labels.append(line.replace('>', '').strip())
+      else:
+        reads.append(line.strip())
+
+  return labels, reads
 
 class NarrowPeak:
   # Reference: 
