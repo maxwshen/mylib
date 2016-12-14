@@ -139,6 +139,10 @@ def shell_mv(inp_fn, out_fn):
   subprocess.call(['mv', inp_fn, out_fn])
   return
 
+def num_files(inp_dir):
+  ans = subprocess.check_output('ls ' + inp_dir + ' | wc -l', shell = True)
+  return ans
+
 #########################################
 # PROJECT STRUCTURE
 #########################################
