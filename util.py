@@ -26,6 +26,7 @@ class Timer:
       self.last_print = datetime.datetime.now()
       if self.total != -1:
         print '\n\t\tPROGRESS %:', '{:5.2f}'.format(float(self.num * 100) / float(self.total)), ' : ', self.num, '/', self.total
+        print '\t\t', self.progress_bar(float(self.num * 100) / float(self.total))
       else:
         print '\n\t\tTIMER:', self.num, 'iterations done after', str(datetime.datetime.now() - self.times[0])
       # print '\n\t\tTIMER:', self.num, 'iterations at', datetime.datetime.now()
@@ -40,6 +41,11 @@ class Timer:
 
       self.prev_num = self.num
 
+    if self.num == self.total:
+      # if done
+        print '\n\t\tPROGRESS %:', '{:5.2f}'.format(float(self.num * 100) / float(self.total)), ' : ', self.num, '/', self.total
+        print '\t\t', datetime.datetime.now()
+
     sys.stdout.flush()
     return
 
@@ -53,6 +59,21 @@ class Timer:
     if print_progress:
       self.progress_update()
     return
+
+  def progress_bar(self, pct):
+    RESOLUTION = 60
+    bar = '['
+    pct = int(pct / (100.0 / RESOLUTION))
+    bar += '\x1b[6;30;42m'
+    for i in range(pct):
+      bar += 'X'
+    bar += '\x1b[0m'      
+    for i in range(RESOLUTION - pct):
+      bar += '-'
+    bar += ']'
+    return bar
+
+# end Timer
 
 def time_dec(func):
   def wrapper(*args, **kwargs):
