@@ -31,10 +31,13 @@ class Timer:
         print '\n\t\tTIMER:', self.num, 'iterations done after', str(datetime.datetime.now() - self.times[0])
       # print '\n\t\tTIMER:', self.num, 'iterations at', datetime.datetime.now()
       # print '\t\tTIMER:', self.num - self.prev_num, 'iterations performed in', num_secs, 'seconds'
-      print '\t\t\tRate:', '{:5.2f}'.format(float(self.num - self.prev_num) / num_secs), 'iterations/second'
-      
+      rate = float(self.num - self.prev_num) / num_secs
       a = (self.times[1] - self.times[0]) / self.num
-      print '\t\t\tAvg. Iteration Time:', a
+      if rate > 1:
+        print '\t\t\tRate:', '{:5.2f}'.format(rate), 'iterations/second'
+      else:
+        print '\t\t\tAvg. Iteration Time:', a
+        
       if self.total != -1:
         print '\t\tTIMER: Expected time remaining:', self.total, \
           'iterations =', a * self.total - (datetime.datetime.now() - self.times[0])
