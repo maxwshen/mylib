@@ -1,4 +1,5 @@
 import Bio, sys, os, subprocess
+from collections import defaultdict
 
 FASTQ_OFFSET = 33
 
@@ -80,3 +81,19 @@ def SeqIO_fastq_qual_string(rx):
   # Takes as input a Bio.SeqIO object
   quals = rx.letter_annotations['phred_quality']
   return ''.join([chr(s + 33) for s in quals])
+
+class RepeatMasker:
+  def __init__(self, genome):
+    print '\tBuilding Repeats...'
+    self.data = defaultdict(list)
+    with open('/cluster/mshen/tools/repeatmasker/' + genome + '.repeats.txt') as f:
+      for i, line in enumerate(f):
+        w = line.split(',')
+        self.data[w[0]].append( (int(w[1]), int(w[2])) )
+
+  def search(self, chro, start, end):
+    cands = self.data[chro]
+    for cand in cands:
+      if cand[0] < start < cand[1] or cand[0] < end < cand[1]:
+        return True
+    return False
