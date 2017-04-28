@@ -4,6 +4,14 @@ from collections import defaultdict
 FASTQ_OFFSET = 33
 
 #########################################
+# Biology 
+#########################################
+
+def reverse_complement(dna):
+  lib = {'A': 'T', 'G': 'C', 'C': 'G', 'T': 'A'}
+  return ''.join([lib[s] for s in dna][::-1])
+
+#########################################
 # Biology parameters
 #########################################
 
@@ -90,6 +98,14 @@ class RepeatMasker:
       for i, line in enumerate(f):
         w = line.split(',')
         self.data[w[0]].append( (int(w[1]), int(w[2])) )
+
+  def trim(self, chro, start, end):
+    new_data = defaultdict(list)
+    for xk in self.data[chro]:
+      if start <= xk[0] < xk[1] <= end:
+        new_data[chro].append((xk[0], xk[1]))
+    self.data = new_data
+    return
 
   def search(self, chro, start, end):
     cands = self.data[chro]

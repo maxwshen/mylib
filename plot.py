@@ -9,17 +9,21 @@ def hist(data, out_fn):
   sns.distplot(data, kde = False)
   plt.ylabel('Counts')
   plt.savefig(out_fn)
+  plt.close()
   return
 
 def scatter(d, x_name, y_name, out_fn):
   # d should be a pandas.dataframe
   sns.jointplot(x = x_name, y = y_name, data = d)
   plt.savefig(out_fn)
+  plt.close()
+  return
 
 def heatmap(d, out_fn):
   sns.heatmap(d, linewidths = 0.5)
   plt.savefig(out_fn)
-
+  plt.close()
+  return
 
 def convert_filetype(fn, in_type, out_type):
   out_fn = fn.strip(in_type) + out_type

@@ -7,8 +7,8 @@ import sys, string, csv, os, fnmatch, datetime, subprocess
 #########################################
 
 class Timer:
-  def __init__(self, total = -1, print_interval = 5):
-    # print_interval is in units of seconds
+  def __init__(self, total = -1, print_interval = 20000):
+    # print_interval is in units of microseconds
     self.times = [datetime.datetime.now()]
     self.num = 0
     self.print_interval = print_interval
@@ -18,17 +18,19 @@ class Timer:
 
   def progress_update(self):
     if self.last_print == 0:
-      num_secs = (datetime.datetime.now() - self.times[0]).seconds
+      num_secs = (datetime.datetime.now() - self.times[0]).microseconds
     else:
-      num_secs = (datetime.datetime.now() - self.last_print).seconds
+      num_secs = (datetime.datetime.now() - self.last_print).microseconds
 
     if num_secs >= self.print_interval:
+      if self.last_print != 0:
+        sys.stdout.write("\033[F\033[F\033[F\033[F\033[F")
       self.last_print = datetime.datetime.now()
       if self.total != -1:
         print '\n\t\tPROGRESS %:', '{:5.2f}'.format(float(self.num * 100) / float(self.total)), ' : ', self.num, '/', self.total
         print '\t\t', self.progress_bar(float(self.num * 100) / float(self.total))
       else:
-        print '\n\t\tTIMER:', self.num, 'iterations done after', str(datetime.datetime.now() - self.times[0])
+        print '\n\t\tTIMER:', self.num, 'iterations done after', str(datetime.datetime.now() - self.times[0]), '\n'
       # print '\n\t\tTIMER:', self.num, 'iterations at', datetime.datetime.now()
       # print '\t\tTIMER:', self.num - self.prev_num, 'iterations performed in', num_secs, 'seconds'
       rate = float(self.num - self.prev_num) / num_secs
@@ -39,10 +41,11 @@ class Timer:
         print '\t\t\tAvg. Iteration Time:', a
         
       if self.total != -1:
-        print '\t\tTIMER: Expected time remaining:', self.total, \
-          'iterations =', a * self.total - (datetime.datetime.now() - self.times[0])
+        print '\t\tTIMER ETA:', a * self.total - (datetime.datetime.now() - self.times[0])
 
       self.prev_num = self.num
+
+      sys.stdout.flush()
 
     if self.num == self.total:
       # if done
@@ -64,7 +67,7 @@ class Timer:
     return
 
   def progress_bar(self, pct):
-    RESOLUTION = 60
+    RESOLUTION = 40
     bar = '['
     pct = int(pct / (100.0 / RESOLUTION))
     bar += '\x1b[6;30;42m'
@@ -166,6 +169,17 @@ def shell_mv(inp_fn, out_fn):
 def num_files(inp_dir):
   ans = subprocess.check_output('ls ' + inp_dir + ' | wc -l', shell = True)
   return ans
+
+def pdf_unite(inp_dir, nm = '_united.pdf'):
+  fns = []
+  for fn in os.listdir(inp_dir):
+    if fnmatch.fnmatch(fn, '*pdf') and fn != nm:
+      fns.append(inp_dir + fn)
+  print 'PDF Uniting', len(fns), 'files into', inp_dir, nm
+
+  subprocess.call('pdfunite ' + ' '.join(fns) + ' ' + inp_dir + nm, shell = True)
+
+  return
 
 #########################################
 # PROJECT STRUCTURE
