@@ -11,10 +11,13 @@ class Timer:
     # print_interval is in units of microseconds
     self.times = [datetime.datetime.now()]
     self.num = 0
-    self.print_interval = print_interval
     self.last_print = 0
     self.prev_num = 0
     self.total = int(total)
+    if sys.stdout.isatty():   # if undirected stdout
+      self.print_interval = print_interval
+    else:   # else if stdout is directed int ofile
+      self.print_interval = 5000000   # 5 seconds
 
   def progress_update(self):
     if self.last_print == 0:
@@ -22,7 +25,10 @@ class Timer:
     else:
       num_secs = (datetime.datetime.now() - self.last_print).microseconds
 
-    if num_secs >= self.print_interval:
+    passed_print_interval = (num_secs >= self.print_interval)
+    is_done = (self.num == self.total)
+
+    if passed_print_interval or is_done:
       if self.last_print != 0:
         sys.stdout.write("\033[F\033[F\033[F\033[F\033[F")
       self.last_print = datetime.datetime.now()
@@ -31,8 +37,6 @@ class Timer:
         print '\t\t', self.progress_bar(float(self.num * 100) / float(self.total))
       else:
         print '\n\t\tTIMER:', self.num, 'iterations done after', str(datetime.datetime.now() - self.times[0]), '\n'
-      # print '\n\t\tTIMER:', self.num, 'iterations at', datetime.datetime.now()
-      # print '\t\tTIMER:', self.num - self.prev_num, 'iterations performed in', num_secs, 'seconds'
       rate = float(self.num - self.prev_num) / num_secs
       a = (self.times[1] - self.times[0]) / self.num
       if rate > 1:
@@ -41,16 +45,14 @@ class Timer:
         print '\t\t\tAvg. Iteration Time:', a
         
       if self.total != -1:
-        print '\t\tTIMER ETA:', a * self.total - (datetime.datetime.now() - self.times[0])
+        if not is_done:
+          print '\t\tTIMER ETA:', a * self.total - (datetime.datetime.now() - self.times[0])
+        if is_done:
+          print '\t\tCompleted in:', datetime.datetime.now() - self.times[0]
 
       self.prev_num = self.num
 
       sys.stdout.flush()
-
-    if self.num == self.total:
-      # if done
-        print '\n\t\tPROGRESS %:', '{:5.2f}'.format(float(self.num * 100) / float(self.total)), ' : ', self.num, '/', self.total
-        print '\t\t', datetime.datetime.now()
 
     sys.stdout.flush()
     return
@@ -170,14 +172,15 @@ def num_files(inp_dir):
   ans = subprocess.check_output('ls ' + inp_dir + ' | wc -l', shell = True)
   return ans
 
-def pdf_unite(inp_dir, nm = '_united.pdf'):
+def pdf_unite(inp_dir, nm = '_united', regex = ''):
   fns = []
+  out_fn = nm + '_' + regex + '.pdf'
   for fn in os.listdir(inp_dir):
-    if fnmatch.fnmatch(fn, '*pdf') and fn != nm:
+    if fnmatch.fnmatch(fn, '*' + regex + '*pdf') and fn != out_fn:
       fns.append(inp_dir + fn)
-  print 'PDF Uniting', len(fns), 'files into', inp_dir, nm
+  print 'PDF Uniting', len(fns), 'files into', inp_dir, out_fn
 
-  subprocess.call('pdfunite ' + ' '.join(fns) + ' ' + inp_dir + nm, shell = True)
+  subprocess.call('pdfunite ' + ' '.join(fns) + ' ' + inp_dir + out_fn, shell = True)
 
   return
 

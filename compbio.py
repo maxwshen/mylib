@@ -8,7 +8,7 @@ FASTQ_OFFSET = 33
 #########################################
 
 def reverse_complement(dna):
-  lib = {'A': 'T', 'G': 'C', 'C': 'G', 'T': 'A'}
+  lib = {'A': 'T', 'G': 'C', 'C': 'G', 'T': 'A', 'N': 'N'}
   return ''.join([lib[s] for s in dna][::-1])
 
 #########################################
