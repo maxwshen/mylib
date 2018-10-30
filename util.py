@@ -126,11 +126,12 @@ def write_delimited_text(out_fn, lists, dlm):
 #########################################
 def ensure_dir_exists(directory):
   # Guarantees that input dir exists
-  try:
-    os.makedirs(directory)
-  except OSError:
-    if not os.path.isdir(directory):
-      raise
+  if not os.path.exists(directory):
+    try:
+      os.makedirs(directory)
+    except OSError:
+      if not os.path.isdir(directory):
+        raise
   return
 
 def exists_empty_fn(fn):
