@@ -61,11 +61,18 @@ if shopt -q login_shell; then
       export RUN_ONCE_MY="1"
       function cd() { builtin cd "$@" && echo $(pwd) >> /home/unix/maxwshen/.dir.log; }
 
+      # Remove duplicates
+      awk '!seen[$0]++' /home/unix/maxwshen/.dir.log > /home/unix/maxwshen/.dir.2.log
+      mv /home/unix/maxwshen/.dir.2.log /home/unix/maxwshen/.dir.log
+
+      # Remove default starting directory. $ matches end-of-line
+      echo "$(grep -v "/ahg/regevdata/projects/E3PerturbSeq/181024_Max_Rotation$" /home/unix/maxwshen/.dir.log)" > /home/unix/maxwshen/.dir.log
+
       printf "\n%s\n" "${yel}==== Recent Directories ====${end}"
-      tail -n 5 /home/unix/maxwshen/.dir.log
+      tail -n 12 /home/unix/maxwshen/.dir.log
       printf "\n"
 
-      tail /home/unix/maxwshen/.dir.log > /home/unix/maxwshen/.dir.2.log
+      tail -n 8 /home/unix/maxwshen/.dir.log > /home/unix/maxwshen/.dir.2.log
       mv /home/unix/maxwshen/.dir.2.log /home/unix/maxwshen/.dir.log
     fi
   fi
