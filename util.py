@@ -33,22 +33,22 @@ class Timer:
         sys.stdout.write("\033[F\033[F\033[F\033[F\033[F")
       self.last_print = datetime.datetime.now()
       if self.total != -1:
-        print '\n\t\tPROGRESS %:', '{:5.2f}'.format(float(self.num * 100) / float(self.total)), ' : ', self.num, '/', self.total
-        print '\t\t', self.progress_bar(float(self.num * 100) / float(self.total))
+        print('\n\t\tPROGRESS %:', '{:5.2f}'.format(float(self.num * 100) / float(self.total)), ' : ', self.num, '/', self.total)
+        print('\t\t', self.progress_bar(float(self.num * 100) / float(self.total)))
       else:
-        print '\n\t\tTIMER:', self.num, 'iterations done after', str(datetime.datetime.now() - self.times[0]), '\n'
+        print('\n\t\tTIMER:', self.num, 'iterations done after', str(datetime.datetime.now() - self.times[0]), '\n')
       rate = float(self.num - self.prev_num) / num_secs
       a = (self.times[1] - self.times[0]) / self.num
       if rate > 1:
-        print '\t\t\tRate:', '{:5.2f}'.format(rate), 'iterations/second'
+        print('\t\t\tRate:', '{:5.2f}'.format(rate), 'iterations/second')
       else:
-        print '\t\t\tAvg. Iteration Time:', a
+        print('\t\t\tAvg. Iteration Time:', a)
         
       if self.total != -1:
         if not is_done:
-          print '\t\tTIMER ETA:', a * self.total - (datetime.datetime.now() - self.times[0])
+          print('\t\tTIMER ETA:', a * self.total - (datetime.datetime.now() - self.times[0]))
         if is_done:
-          print '\t\tCompleted in:', datetime.datetime.now() - self.times[0]
+          print('\t\tCompleted in:', datetime.datetime.now() - self.times[0])
 
       self.prev_num = self.num
 
@@ -86,10 +86,10 @@ class Timer:
 def time_dec(func):
   def wrapper(*args, **kwargs):
     t = datetime.datetime.now()
-    print '\n', t
+    print('\n', t)
     res = func(*args, **kwargs)
-    print datetime.datetime.now()
-    print 'Completed in', datetime.datetime.now() - t, '\n'
+    print(datetime.datetime.now())
+    print('Completed in', datetime.datetime.now() - t, '\n')
     return res
   return wrapper
 
@@ -99,7 +99,7 @@ def time_dec(func):
 def read_delimited_text(inp_fn, dlm, verbose = False):
   # Reads in a text file with the given delimiter, like '\t'
   if verbose:
-    print 'Reading in', inp_fn, '...'
+    print('Reading in', inp_fn, '...')
   with open(inp_fn) as f:
     reader = csv.reader(f, delimiter = dlm)
     d = list(reader)
@@ -107,7 +107,7 @@ def read_delimited_text(inp_fn, dlm, verbose = False):
 
 def dictread_delimited_text(inp_fn, dlm, verbose = False):
   if verbose:
-    print 'Reading in', inp_fn, '...'
+    print('Reading in', inp_fn, '...')
   with open(inp_fn) as f:
     reader = csv.DictReader(f, delimiter = dlm)
     d = list(reader)
@@ -179,7 +179,7 @@ def pdf_unite(inp_dir, nm = '_united', regex = ''):
   for fn in os.listdir(inp_dir):
     if fnmatch.fnmatch(fn, '*' + regex + '*pdf') and fn != out_fn:
       fns.append(inp_dir + fn)
-  print 'PDF Uniting', len(fns), 'files into', inp_dir, out_fn
+  print('PDF Uniting', len(fns), 'files into', inp_dir, out_fn)
 
   subprocess.call('pdfunite ' + ' '.join(fns) + ' ' + inp_dir + out_fn, shell = True)
 
@@ -202,7 +202,7 @@ def get_prev_step(f, src_dir):
   if ind > 0:
     return steps[ind - 1]
   else:
-    print 'Error: No previous step for first script', f
+    print('Error: No previous step for first script', f)
   return ''
 
 def code_dependency(src_dir):
@@ -238,7 +238,7 @@ def catch_function_fail_dec(func):
     try:
       func(*args, **kwargs)
     except:
-      print 'Skipping', func.__name__
+      print('Skipping', func.__name__)
     return  
   return wrapper
 

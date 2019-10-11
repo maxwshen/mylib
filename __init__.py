@@ -6,7 +6,6 @@ import datetime
 import random
 import copy
 import os
-import commands
 import fnmatch
 import re
 import csv

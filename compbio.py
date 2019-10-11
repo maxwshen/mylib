@@ -67,9 +67,13 @@ def dna_to_aa(codon):
 #########################################
 
 def get_genomic_seq_twoBitToFa(genome, chro, start, end):
-  TOOL = '/cluster/mshen/tools/2bit/twoBitToFa'
-  TOOL_DB_FOLD = '/cluster/mshen/tools/2bit/'
-  ans = subprocess.check_output(TOOL + ' ' + TOOL_DB_FOLD + genome + '.2bit -noMask stdout -seq=' + chro + ' -start=' + str(start) + ' -end=' + str(end), shell = True)
+  '''
+    
+  '''
+  TOOL = '/ahg/regevdata/projects/CRISPR-libraries/tools/2bit/twoBitToFa'
+  TOOL_DB_FOLD = '/ahg/regevdata/projects/CRISPR-libraries/tools/2bit/'
+  command = f'{TOOL} {TOOL_DB_FOLD}{genome}.2bit -noMask stdout -seq={chro} -start={start} -end={end}'
+  ans = subprocess.check_output(command, shell = True).decode('utf-8')
   ans = ''.join(ans.split('\n')[1:])
   return ans.strip()
 
@@ -96,12 +100,12 @@ def read_fasta(fasta_fn):
 class HgCodingGenes():
   def __init__(self, hg_build):
     self.genome_build = hg_build
-    gene_lines = open('/cluster/mshen/mylib/%s_knownGene.txt' % (hg_build)).readlines()
+    gene_lines = open('/home/unix/maxwshen/mylib/%s_knownGene.txt' % (hg_build)).readlines()
     self.DataBase = defaultdict(dict)
     self.kgXref = None
 
     if hg_build == 'hg38':
-      attr_lines = open('/cluster/mshen/mylib/%s_knownAttrs.txt' % (hg_build)).readlines()
+      attr_lines = open('/home/unix/maxwshen/mylib/%s_knownAttrs.txt' % (hg_build)).readlines()
     else:
       attr_lines = None
 
@@ -114,30 +118,60 @@ class HgCodingGenes():
       elif hg_build == 'hg19':
         pass
 
+      '''
+        Parse UCSC knownGene.txt. 
+        Properties:
+          - geneEnd > geneStart
+          - codingEnd >= codingStart (difference can be 0)
+          - exonEnds > exonStarts
+
+        Web UCSC browser indexing: 1-start, fully-closed 
+        UCSC database tables: 0-start, half-open
+        
+          To interconvert:
+            0-start, half-open to 1-start, fully-closed: Add 1 to start, end = same
+            1-start, fully-closed to 0-start, half-open: Subtract 1 from start, end = same
+
+          - exonStart, codingStart positions +1 are the true start positions in UCSC web browser genome. exonEnd, codingEnd are the same positions. 
+
+        0-start, half-open enables (exonEnd - exonStart = exonLength).
+
+        Internal representation: 1-start, fully-closed.
+          exon_length = exon_end - exon_start + 1
+
+      '''
+
       w = gene_line.split('\t')
       name = w[0]
       chrom = w[1]
       strand = w[2]
-      codingStart = int(w[5])
+      codingStart = int(w[5]) + 1
       codingEnd = int(w[6])
-      exonStarts = [int(s) for s in w[8].split(',')[:-1]]
+      exonStarts = [int(s) + 1 for s in w[8].split(',')[:-1]]
       exonEnds = [int(s) for s in w[9].split(',')[:-1]]
 
-      # Adjust for UTR
-      exonStarts[0] = codingStart
-      exonEnds[-1] = codingEnd  
+      # Non-coding
+      if codingEnd - codingStart == -1:
+        continue
 
-      # Verified properties: exonStart < exonEnd, always
+      # Adjust for UTR, potentially occurring in any exon
+      # coding_exons is an ordered list of 2-element lists [start, end]
+      coding_exons = [list(s) for s in zip(exonStarts, exonEnds)]
+      coding_exons = [exon_tpl for exon_tpl in coding_exons if exon_tpl[1] >= codingStart]
+      coding_exons = [exon_tpl for exon_tpl in coding_exons if exon_tpl[0] <= codingEnd]
+      coding_exons[0][0] = codingStart
+      coding_exons[-1][1] = codingEnd
+
       self.DataBase[chrom][name] = dict()
       self.DataBase[chrom][name]['StartEnd'] = (codingStart, codingEnd)
-      self.DataBase[chrom][name]['Exons'] = zip(exonStarts, exonEnds)
+      self.DataBase[chrom][name]['Exons'] = coding_exons
       self.DataBase[chrom][name]['Strand'] = strand
 
   def build_kgXref(self):
     # Database that links kgID (uc062ewk.1) to common gene names (A4GALT).
     # Generally many kgIDs for a single gene name.
     self.kgXref = defaultdict(list)
-    with open('/cluster/mshen/mylib/%s_kgXref.txt' % (self.genome_build)) as f:
+    with open('/home/unix/maxwshen/mylib/%s_kgXref.txt' % (self.genome_build)) as f:
       for i, line in enumerate(f):
         w = line.split()
         kgid = w[0]
@@ -146,40 +180,50 @@ class HgCodingGenes():
     return
 
   def get_reading_frame(self, genome, chrom, position, gene_suggestion = None):
+    '''
+      Return in [1, 2, 3].
+
+      Position should be in 1-indexed format (default from Clinvar, same as UCSC web browser. Not the same as UCSC database tables).
+    '''
+    # print('WARNING: Ensure provided position is 1-indexed.')
     if genome != self.genome_build:
-      print 'Error: %s did not match genome build %s' % (genome, self.genome_build)
+      print('Error: %s did not match genome build %s' % (genome, self.genome_build))
       return
 
     if gene_suggestion is not None and self.kgXref is None:
       self.build_kgXref()
 
     found = []
+    mod3_120_to_123 = lambda num: 3 if num == 0 else num
 
     for gene in self.DataBase[chrom]:
       coding_start, coding_end = self.DataBase[chrom][gene]['StartEnd']
       strand = self.DataBase[chrom][gene]['Strand']
 
       if coding_start <= position <= coding_end:
-        coding_position = 0
-        total_tx_len = sum([e-s for e, s in self.DataBase[chrom][gene]['Exons']])
+        cumulative_nts = 0
+        total_tx_len = sum([exon[1] - exon[0] + 1 for exon in self.DataBase[chrom][gene]['Exons']])
         for (exonStart, exonEnd) in self.DataBase[chrom][gene]['Exons']:
 
-          if strand == '+':
-            in_exon = bool(exonStart <= position < exonEnd)
-          else:
-            in_exon = bool(exonStart < position <= exonEnd)
-          
-          if in_exon:
-            position_within = position - exonStart
+          if bool(exonStart <= position <= exonEnd):
+            nt_num_in_exon = position - exonStart + 1
 
             if strand == '+':
-              found_frame = (coding_position + position_within) % 3
+              found_frame = (cumulative_nts + nt_num_in_exon) % 3
             else:
-              found_frame = (total_tx_len - coding_position - position_within) % 3
-            found.append((found_frame, strand, position - exonStart, position - exonEnd, gene))
+              found_frame = (total_tx_len - cumulative_nts - nt_num_in_exon + 1) % 3
+            found_frame = mod3_120_to_123(found_frame)
+            found.append((
+              found_frame, 
+              strand, 
+              position - exonStart, 
+              position - exonEnd, 
+              gene
+            ))
+            continue
 
-          exon_length = exonEnd - exonStart
-          coding_position += exon_length
+          exon_length = exonEnd - exonStart + 1
+          cumulative_nts += exon_length
 
     if len(found) == 1:
       return 'One hit found', found[0]
@@ -204,7 +248,7 @@ class NarrowPeak:
   def __init__(self, line):
     words = line.split()
     if len(words) != 10:
-      print 'ERROR: Input not in valid NarrowPeak format'
+      print('ERROR: Input not in valid NarrowPeak format')
 
     self.chrom = words[0]
     self.chrom_int = int(self.chrom.replace('chr', ''))
@@ -223,7 +267,7 @@ def read_narrowpeak_file(fn):
   with open(fn) as f:
     for i, line in enumerate(f):
       peaks.append(NarrowPeak(line))
-  print 'Found', len(peaks), 'peaks'
+  print('Found', len(peaks), 'peaks')
   return peaks
 
 
@@ -234,7 +278,7 @@ def SeqIO_fastq_qual_string(rx):
 
 class RepeatMasker:
   def __init__(self, genome):
-    print '\tBuilding Repeats...'
+    print('\tBuilding Repeats...')
     self.data = defaultdict(list)
     with open('/cluster/mshen/tools/repeatmasker/' + genome + '.repeats.txt') as f:
       for i, line in enumerate(f):
